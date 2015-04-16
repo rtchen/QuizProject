@@ -1,6 +1,3 @@
-﻿Group Members: Jordan Marcy, Jialong Huang, Jia Wen Li, Ruitang Chen
-
-
 Quizzes:
 
 
