@@ -1,0 +1,46 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+ <%@page import="backend.*, java.util.*" %>
+<% int quiz_id = Integer.parseInt(request.getParameter("quiz_id"));%>
+<h3>Question</h3>
+<p>Note: for fill in the blanks questions, the question text should be in the format:
+<em>&lt;BLANK&gt; was the 35th US President</em>, where &lt;BLANK&gt; denote blanks
+to fill in. The system accepts multiple answers.</p>
+<form method="post" action="AddQuestion">
+<table width="700" cellspacing="3" cellpadding="3" border="0">
+        <tr>
+                <th>Question Text</th>
+                <td>
+                        <textarea name="question_text" style="width:500px;height:80px;"></textarea>
+                </td>
+        </tr>
+</table>
+<h3>Solutions</h3>
+<table id="tblOptions" width="400" cellspacing="6" cellpadding="6" border="0">
+        <thead>
+                <tr>
+                       
+                        <th width="400">Solution Text</th>
+                        
+                </tr>
+        </thead>
+        <tbody>
+<%
+for(int i=0;i<5;i++) {
+       
+%>
+<tr>
+       
+        <td><input type="text" name="correct_answers" style="width:100%" value=""></td>
+        
+</tr>
+<%
+ 
+}
+%>
+        </tbody>
+</table>
+<p></p>
+<input type="hidden" name = "quiz_id" value = "<%=quiz_id %>">
+<input type ="hidden" name ="questionType" value = "FillBlank">
+<input type="submit" value="Add Question">
+</form>

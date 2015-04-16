@@ -1,0 +1,60 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>   
+<%@page import="backend.*, java.util.*" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+UserManager userManager = new UserManager();
+QuizManager quizManager=new QuizManager();
+User user = userManager.getUser(Integer.parseInt(request.getParameter("user")));
+%>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" type="text/css" href="global.css">
+<title><%=user.username %></title>
+</head>
+<body>
+	<div class="realheader">
+		<a href="home.jsp" class="logo">Quiz It!</a>
+		<p class="logo-word">"Test, Learn, and Share on Quiz It!"</p>
+		<form method="post" action="LogoutServlet">
+			<input type="submit" class="small-button" id="logout-button" value="Logout">
+		</form>
+		<a id="admin-link" href="index.jsp">Home</a>
+	</div>
+	
+<div class="realbody">	
+	<div class="title-band"><p><%=user.username %>'s Information</p></div>
+	<% String imgSrc = (user.getPhotoURL() == null ? "default_profile.jpg" : user.getPhotoURL()); %>
+	<img src=<%=imgSrc%> width="200px" height="200px">
+	<% if (user.isFriendWith(currentUser)) { %>
+		<button id="afb" class="small-button" onClick="window.location.href='FriendServlet?way=unfriend&id=<%=currentUser.user_id%>&fid=<%=user.user_id%>'">Unfriend</button>
+	<% } else { %>
+		<button id="afb" class="small-button" onClick="window.location.href='FriendServlet?way=friend&id=<%=currentUser.user_id%>&fid=<%=user.user_id%>'">Friend</button>
+	<% } %>
+	
+	<div class="user-information">
+		<form method="post" action="SeeFriendServlet">
+			<input type="hidden" name="current-user-id" value="<%=currentUser.user_id %>">
+		<table class="quiz-information-table">
+			<tr><th>Name:</th> <td><%=user.username %></td></tr>	
+			<tr><th>Join Date: </th> <td><%=user.getJoinDate().toString() %></td></tr>
+			<tr><th>Friends:</th> 
+			<td><select id="friend-select" name="friend-user-id">
+			<% ArrayList<String> friends = user.getFriends(); 
+			for (String friendName : friends) { 
+				User friend = userManager.getUser(friendName);%>
+				<option value=<%=friend.user_id%>><%=friend.username %></option>
+			<%} %>
+			</select></td>
+			<td><input type="submit" class="small-button" value="See Profile"></td>
+			</tr>
+		</table>
+		</form>
+	</div>
+</div>
+</body>
+</html>

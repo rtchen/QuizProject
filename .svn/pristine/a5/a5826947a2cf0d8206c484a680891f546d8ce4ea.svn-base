@@ -1,0 +1,44 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@page import="backend.*, java.util.*" %>
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+QuizManager manager=new QuizManager();
+int question_attempt_id = Integer.parseInt(request.getParameter("question_attempt_id"));
+QuestionAttempt qa = QuestionAttempt.getQuestionAttempt(question_attempt_id);
+int attempt_id = qa.quiz_attempt_id;
+Attempt a= Attempt.getAttempt(attempt_id);
+int quiz_id=a.quizID;
+Quiz currentQuiz = manager.getQuiz(quiz_id);
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Immediate Result</title>
+</head>
+<body>
+    <% request.setAttribute("QuizAttempt",a);
+	 request.setAttribute("QuestionAttempt",qa);
+	 int QuestionID  = qa.QuestionID;
+	 Question question = currentQuiz.getQuestion(QuestionID);
+	 request.setAttribute("question",question);
+	 request.setAttribute("questionType",question.questionType);%>
+    <jsp:include page="${requestScope['questionType']}.jsp" />
+    
+   <h4>Solutions</h4>
+   <%ArrayList<String> answers = question.getAnswers(); %>
+   <div style="margin-top:10px">we accepted the following answers:
+    <% for(String answer :answers) { %>
+     <%=answer %> 
+      <% } %>
+    </div>
+  
+   <h4>Your answer</h4>
+ <div style="margin-top:10px">
+     <%=qa.Myanswer %>     
+</div>
+
+<a href="attempt.jsp?attempt_id=<%=attempt_id %>">Continue</a>
+</body>
+</html>

@@ -1,0 +1,30 @@
+package backend;
+
+import java.util.ArrayList;
+
+import org.junit.Test;
+
+public class UserManagerTest {
+
+	@Test
+	public void userTest() {
+		UserManager manager = new UserManager();
+		User user = manager.getUser("Jordan");
+		
+		ArrayList<Message> messages = user.getReceivedMessages();
+		for (Message m : messages) {
+			System.out.println("Message: " + m.getMessage());
+		}
+		ArrayList<String> friends = user.getFriends();
+		for (String f : friends) {
+			System.out.println("Friend: " + f);
+		}
+		ArrayList<Achievement> achievements = user.getAchievements();
+		for (Achievement a : achievements) {
+			System.out.println("Achievement: " + a.getAchievement());
+		}
+		System.out.println("NumQuizzesTaken: " + user.numberOfQuizzesTaken());
+		System.out.println("NumQuizzesCreated: " + user.numberOfQuizzesCreated());
+	}
+	
+}

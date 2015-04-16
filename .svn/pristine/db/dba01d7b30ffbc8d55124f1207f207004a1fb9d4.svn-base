@@ -1,0 +1,228 @@
+@CHARSET "UTF-8";
+
+body, p, a, h2, h3, h4, tr, th, td {
+	font-family: Helvetica Narrow, sans-serif;
+}
+
+.logo{
+	font-size:60px;
+	font-family: Helvetica Narrow, sans-serif;
+	color: #3191f6;
+	font-weight: 600;
+	text-shadow: text-shadow: 2px 2px 2px #FF0000;
+	font-variant: small-caps;
+	position: relative;
+	left: 30px;
+	display: inline;
+	text-decoration: none;
+}
+
+
+.logo-word {
+	display: inline;
+	position: relative;
+	left: 80px;
+	top: -10px;
+	font-family: cursive;
+	font-style: italic;
+	font-size: 20px;
+	font-weight: 500;
+	color: #8d9baa;
+	
+}
+
+#homepage #band {
+	background: url("homepage-band.jpg") no-repeat center center;
+	background-size: cover;
+	height: 450px;
+}
+
+.button {
+	padding: 0 50px;
+	font-size: 25px;
+	height: 50px;
+	display: block;
+	position: relative;
+	z-index: 1;
+	font-family: "museo-sans",sans-serif;
+	color: #333333;
+	font-weight: 900;
+	background-color: #f2cb00;
+	border-radius: 0;
+	line-height: 28px;
+	-webkit-appearance: none;
+}
+
+.small-button {
+	padding: 0 3px;
+	font-size: 15px;
+	height: 30px;
+	display: block;
+	position: relative;
+	z-index: 1;
+	font-family: "museo-sans",sans-serif;
+	color: #333333;
+	font-weight: 900;
+	background-color: #f2cb00;
+	border-radius: 0;
+	line-height: 28px;
+	-webkit-appearance: none;
+}
+
+#band #text {
+	position: relative;
+	left: 100px;
+	top: 50px;
+	font-size: 25px;
+	width: 450px;
+	color: #070b4a;
+}
+
+#band .button {
+	position: relative;
+	left: 100px;
+	top: 50px;
+}
+
+#login-session {
+	position: relative;
+	left: 50%;
+	top: 40px;
+	width: 500px;
+	height: 300px;
+	background-color: #3191f6;
+	border:2px solid #3191f6;
+	border-radius:25px;
+	margin-left: -250px;
+	color: white;
+}
+
+#login-session p {
+	position: relative;
+	left: 30px;
+	font-size: 20px;
+}
+
+#login-session .login-title {
+	font-size: 30px;
+}
+	
+#login-session .button {
+	font-size: 20px;
+	left: 30px;
+	padding: 0 30px;
+	height: 40px;
+}
+
+#login-session .textfield {
+	position: relative;
+	left: 20px;
+	width: 200px;
+	height: 25px;
+	font-size: 20px;
+}
+
+#login-session a {
+	color: #dfdfe7;
+	font-size: 20px;
+	position: relative;
+	top: -30px;
+	left: 250px;
+}
+
+#rememberme_checkbox {
+	position: relative;
+	left: 30px;
+	top: -15px;
+}
+
+.error_message {
+	color: red;
+	position: relative;
+	left: 50%;
+	margin-left: -258px;
+	top: 30px;
+}
+
+.welcome {
+	height: 20px;	
+}
+
+#logout-button {
+	left: 650px;
+	top: -45px;
+}
+
+#admin-link {
+	position: relative;
+	left: 740px;
+	top: -65px;
+}
+
+.title-band {
+	background-color: #3191f6;
+	width: 100%;
+}
+
+.title-band p {
+	font-size: 20px;
+	font-weight: bold;
+	padding: 5px 5px;
+	color: white;
+}
+
+.realbody {
+	position: relative;
+	left: 50%;
+	margin-left: -400px;
+	width: 800px;
+	
+}
+
+.announcement h3 {
+	font-weight: bold;
+	display: inline;
+}
+
+.announcement em {
+	padding-left: 30px;
+	display: inline;
+}
+
+.announcement .delete-link {
+	padding-left: 30px;
+}
+
+.announcement p {
+	padding-left: 20px;
+}
+
+#announce-form #announce-subject{
+	font-size: 15px;
+	width: 200px;
+	margin-left: 10px;
+}
+	
+#announce-form .small-button {
+	display: inline;
+	margin-left: 10px;
+}
+
+#announce-form textarea {
+	font-size: 15px;
+}
+
+.promote-form select {
+   padding: 5px;
+   font-size: 15px;
+   line-height: 1;
+   border: 0;
+   border-radius: 0;
+   height: 30px;
+   margin-bottom: 10px;
+}
+
+.promote-form .small-button {
+	display: inline;
+	margin-left: 10px;
+}

@@ -1,0 +1,209 @@
+package backend;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.*;
+
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+
+public class MessageManager {
+
+	private static Connection con=MyDBInfo.getConnection();
+	
+	public MessageManager() {
+		
+	}
+	
+	public ArrayList<Message> getReceivedMessages(String username) {
+		ArrayList<Message> messageList = new ArrayList<Message>();
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM messages WHERE Receiver_Username=" + format(username)+" ORDER BY `Sent_Date` DESC");
+			while (rs.next()) {
+				messageList.add(new Message(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBoolean(4), rs.getInt(5),rs.getTimestamp(6), rs.getString(7), rs.getInt(8), rs.getString(9)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return messageList;
+	}
+	
+	public Message getMessage(int msgID) {
+		Message msg = null;
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM messages WHERE Message_ID=" + msgID);
+			if(rs.next()) {
+				msg = new Message(rs);
+			}
+        } catch (SQLException e) {
+                e.printStackTrace();
+        }
+        return msg;
+	}
+	
+	public ArrayList<Message> getSentMessages(String username) {
+		ArrayList<Message> messageList = new ArrayList<Message>();
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM messages WHERE Sender_Username=" + format(username)+"ORDER BY `Sent_Date` DESC");
+			while (rs.next()) {
+				messageList.add(new Message(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBoolean(4), rs.getInt(5),rs.getTimestamp(6), rs.getString(7), rs.getInt(8), rs.getString(9)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return messageList;
+	}
+	public int numFriendRequests(String username) {
+        try {
+                ResultSet friendRequests = con.prepareStatement("SELECT COUNT(*) FROM `messages` WHERE `Receiver_Username` ="+format(username)+"and Received=(0) and `Message_Type` = 'FriendRequest'").executeQuery();        
+                int numFriendRequests = 0;                        
+                if (friendRequests.next()) {
+                        numFriendRequests += friendRequests.getInt(1);
+                }
+                return numFriendRequests;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public int numChallenges(String username) {
+        try {
+                ResultSet challenges = con.prepareStatement("SELECT COUNT(*) FROM `messages` WHERE `Receiver_Username` ="+format(username)+"and Received=(0) and `Message_Type` = 'Challenge'").executeQuery();        
+                int numChallenges = 0;                        
+                if (challenges.next()) {
+                        numChallenges += challenges.getInt(1);
+                }
+                return numChallenges;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public int numAllMessages() {
+        try {
+                ResultSet rs = con.prepareStatement("SELECT COUNT(*) FROM `messages`").executeQuery();        
+                int numMsgs = 0;                        
+                if (rs.next()) {
+                        numMsgs += rs.getInt(1);
+                }
+                return numMsgs;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public int numNewMessages(String username) {
+        try {
+                ResultSet messages = con.prepareStatement("SELECT COUNT(*) FROM `messages` WHERE `Receiver_Username` ="+format(username)+"and Received=(0) and `Message_Type` = 'General'").executeQuery();  
+                int numMsgs = 0;
+                
+                if (messages.next()) {
+                	
+                        numMsgs += messages.getInt(1);
+                }
+                return numMsgs;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public int numNewAcceptances(String username) {
+        try {
+                ResultSet messages = con.prepareStatement("SELECT COUNT(*) FROM `messages` WHERE `Sender_Username` ="+format(username)+"and Received=(0) and `Message_Type` = 'FriendRequestAccepted'").executeQuery();  
+                int numMsgs = 0;
+                
+                if (messages.next()) {
+                	
+                        numMsgs += messages.getInt(1);
+                }
+                return numMsgs;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public int numNewNotifications(String username){
+		int news = numNewMessages(username)+numChallenges(username)+numFriendRequests(username)+numNewAcceptances(username);
+		return news;
+	}
+	public void sendMessage(Message msg) {
+        //Write sql query to update to read
+        try {
+                PreparedStatement ps = con.prepareStatement("INSERT IGNORE INTO `messages` (`Sender_Username`, `Receiver_Username`, `Message`, `Received`, `QuizID`, `Sent_Date`, `Subject`, `Message_ID`, `Message_TYPE`) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)");
+                ps.setString(1, msg.getSender());
+                ps.setString(2, msg.getReceiver());
+                ps.setString(3, msg.getMessage());
+                ps.setBoolean(4,  msg.unread() );
+                ps.setInt(5,  msg.getQuizID());
+                ps.setTimestamp(6, msg.getDate());
+                ps.setString(7,  msg.getSubject());
+                ps.setInt(8, msg.getMessageID());
+                ps.setString(9, msg.getMessageType());
+                ps.executeUpdate();	
+        } catch (SQLException e) { }
+	}
+	public int numSentMessages(String username) {
+        try {
+                ResultSet messages = con.prepareStatement("SELECT COUNT(*) FROM `messages` WHERE `Sender_Username` ="+format(username)).executeQuery();  
+                int numMsgs = 0;
+                
+                if (messages.next()) {
+                	
+                        numMsgs += messages.getInt(1);
+                }
+                return numMsgs;
+        } catch (SQLException e) {
+                return 0;
+        }
+	}
+	public void deleteMessage(int msgID) {
+        try {
+                con.prepareStatement("DELETE FROM `messages` WHERE `Message_ID` =" + msgID).executeUpdate();
+        } catch (SQLException e) {
+                e.printStackTrace();
+        }
+	}
+	public void deleteSentMessage(int msgID,String sender) {
+        try {
+        		PreparedStatement ps=con.prepareStatement("UPDATE `messages` SET `Sender_Username`=? WHERE `Message_ID` =?");
+        		ps.setString(1, "");
+    			ps.setInt(2, msgID);
+    			ps.executeUpdate();
+        } catch (SQLException e) {
+                e.printStackTrace();
+        }
+	}
+	public void deleteReceivedMessage(int msgID,String receiver) {
+        try {
+        		PreparedStatement ps=con.prepareStatement("UPDATE `messages` SET `Receiver_Username`=? WHERE `Message_ID` =?");
+        		ps.setString(1, "");
+    			ps.setInt(2, msgID);
+    			ps.executeUpdate();
+        } catch (SQLException e) {
+                e.printStackTrace();
+        }
+	}
+	public void markRead(int msgID){
+		try {
+			PreparedStatement ps = con.prepareStatement("UPDATE `messages` SET `Received`= ? WHERE `Message_ID` = ?");
+			ps.setBoolean(1, true);
+			ps.setInt(2, msgID);
+			ps.executeUpdate();
+		} catch (SQLException e) { }
+	}
+	public void markUnread(int msgID){
+		try {
+			PreparedStatement ps = con.prepareStatement("UPDATE `messages` SET `Received`= ? WHERE `Message_ID` = ?");
+			ps.setBoolean(1, false);
+			ps.setInt(2, msgID);
+			ps.executeUpdate();
+		} catch (SQLException e) { }
+	}
+	private static String format(String str) {
+		return "\'" + str + "\'";
+	}
+}

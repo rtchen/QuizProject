@@ -1,0 +1,164 @@
+package backend;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * Servlet implementation class MessageServlet
+ */
+@WebServlet("/MessageServlet")
+public class MessageServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public MessageServlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub		  
+		if(request.getParameter("compose_message")!=null){
+			User currentUser = (User)request.getSession().getAttribute("currentUser");
+			String receiver = request.getParameter("receiver");
+			MessageManager mm=new MessageManager();
+			Date date = new java.util.Date();
+			Timestamp currTime = new Timestamp(date.getTime());
+			String subject = request. getParameter("subject");
+			String message = request.getParameter("message");
+			int ID = mm.numAllMessages();
+			Message msg = new Message(currentUser.getUsername(),receiver,message,false,-1,currTime,subject,ID,"General");
+			mm.sendMessage(msg);
+			response.sendRedirect("messageSent.jsp");				
+		}
+		else if (request.getParameter("inbox_update") != null) {
+            String update = request.getParameter("update_type");
+            String[] checkedIDs = request.getParameterValues("check");
+            User currentUser = (User)request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+            if (checkedIDs != null) {
+                    if (update.equals("delete")) {
+                            for (String ID: checkedIDs) {
+                                    int msgID = Integer.parseInt(ID);
+                                    mm.deleteMessage(msgID);
+                            }
+                    } 
+                    else if (update.equals("unread")) {
+                    	for (String ID: checkedIDs) {
+                            int msgID = Integer.parseInt(ID);
+                           mm.markUnread(msgID);
+                    	}
+                    }
+                    else{
+                    	for (String ID: checkedIDs) {
+                            int msgID = Integer.parseInt(ID);
+                            mm.markRead(msgID);
+                    	}
+                    }
+                    
+            }
+            response.sendRedirect("messages.jsp");
+		}
+		else if (request.getParameter("read_update") != null) {
+            int msgID = Integer.parseInt(request.getParameter("msg_id"));
+            User currentUser = (User)request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+            mm.deleteMessage(msgID); 
+            response.sendRedirect("messages.jsp");
+		}
+		else if (request.getParameter("sent_update") != null) {
+            String update = request.getParameter("update_type");
+            String[] checkedIDs = request.getParameterValues("check");
+            User currentUser = (User)request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+            if (checkedIDs != null) {
+                    if (update.equals("delete")) {
+                            for (String ID: checkedIDs) {
+                                    int msgID = Integer.parseInt(ID);
+                                    mm.deleteMessage(msgID);
+                            }
+                    } 
+                    else if (update.equals("unread")) {
+                    	for (String ID: checkedIDs) {
+                            int msgID = Integer.parseInt(ID);
+                           mm.markUnread(msgID);
+                    	}
+                    }
+                    else{
+                    	for (String ID: checkedIDs) {
+                            int msgID = Integer.parseInt(ID);
+                            mm.markRead(msgID);
+                    	}
+                    }
+                    
+            }
+            response.sendRedirect("messages.jsp");
+		}
+		else if(request.getParameter("friend_request")!=null){
+			User currentUser = (User) request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+			String receiver = request.getParameter("receiver");
+			java.util.Date date = new java.util.Date();
+			Timestamp currTime = new Timestamp(date.getTime());
+			String subject = request.getParameter("subject");
+			String message = request.getParameter("message");
+			int ID = mm.numAllMessages();
+			Message msg = new Message(currentUser.getUsername(),receiver,message,false,-1,currTime,subject,ID,"FriendRequest");
+			mm.sendMessage(msg);
+			response.sendRedirect("messageSent.jsp");
+		}
+		else if (request.getParameter("send_challenge") != null) {
+            User currentUser = (User) request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+			String receiver = request.getParameter("receiver");
+			java.util.Date date = new java.util.Date();
+			Timestamp currTime = new Timestamp(date.getTime());
+			String subject = request.getParameter("subject");
+			String message = request.getParameter("message");
+			int quizID = Integer.parseInt(request.getParameter("quiz_id"));
+			int ID = mm.numAllMessages();
+			Message msg = new Message(currentUser.getUsername(),receiver,message,true,quizID,currTime,subject,ID,"Challenge");
+			mm.sendMessage(msg);
+			response.sendRedirect("QuizInfo.jsp?id=" + quizID);
+    }
+		else if (request.getParameter("accept_friend") != null) {
+            User currentUser = (User) request.getSession().getAttribute("currentUser");
+            MessageManager mm=new MessageManager();
+            UserManager um=new UserManager();
+			String friend = request.getParameter("friend");
+			um.addFriendship(currentUser.getUsername(), friend);
+			Date date = new java.util.Date();
+			Timestamp currTime = new Timestamp(date.getTime());
+			String subject = currentUser.getUsername()+" accepted your friend request";
+			String message = "You are now friend with "+currentUser.getUsername();
+			int ID = mm.numAllMessages();
+			Message msg = new Message(currentUser.getUsername(),friend,message,false,-1,currTime,subject,ID,"FriendRequestAccepted");
+			mm.sendMessage(msg);
+            response.sendRedirect("friendRequests.jsp");
+    }
+		else {
+            response.sendRedirect("messages.jsp");
+		}
+		
+	}
+}

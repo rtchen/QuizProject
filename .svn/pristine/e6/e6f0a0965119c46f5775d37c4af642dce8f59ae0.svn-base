@@ -1,0 +1,264 @@
+package backend;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+
+public class UserManager {
+	
+	private final static String insertIntoUsers = "INSERT INTO users" 
+			  			+ "(Username, Password, Join_Date,is_admin) VALUES"
+			  			+ "(?,?,?,?)";
+	
+	private final static String insertIntoFriends = "INSERT INTO friends" 
+						+ "(UserOne, UserTwo) VALUES"
+						+ "(?,?)";
+	
+	private static Connection con = MyDBInfo.getConnection();
+	/*
+    static {
+    	con = (Connection) new MyDBInfo().getConnection();
+    }
+	
+	public UserManager() {
+		con = new MyDBInfo().getConnection();
+	}
+	*/
+	private void check() {
+		while (con == null) con =  MyDBInfo.getConnection();
+	}
+
+	
+	//Creates an instance of a user from a username.  Before this is called, checks should be
+	//made to see if the username is in the system.
+	public User getUser(String username) {
+		User user = null;
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM users WHERE Username=" + format(username));
+			if (rs.next()) {
+				user = new User(rs.getString("Username"), rs.getTimestamp("Join_Date"),rs.getInt("user_id"),rs.getBoolean("is_admin"));
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return user;
+	}
+	
+	public User getUser(int id) {
+		User user = null;
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM users WHERE user_id=" + id);
+			rs.next();
+			user = new User(rs.getString("Username"), rs.getTimestamp("Join_Date"),rs.getInt("user_id"),rs.getBoolean("is_admin"));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return user;
+	}
+	
+	
+	//Returns a list of all users.
+	public ArrayList<String> getUsers() {
+		ArrayList<String> userList = new ArrayList<String>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT Username, Join_Date FROM users");
+			while (rs.next()) {
+				userList.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return userList;
+	}
+	
+	public int getNumUsers() {
+		int numUsers = 0;
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT COUNT(*) FROM users");
+			if (rs.next()) {
+				numUsers = rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return numUsers;
+	}
+	
+	public ArrayList<String> findUsers(String searchTerm) {
+		ArrayList<String> userList = new ArrayList<String>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT Username FROM users WHERE Username LIKE \'%" + searchTerm + "%\'");
+			while (rs.next()) {
+				userList.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return userList;
+	}
+	
+	/*
+	//Returns the password for a given username.
+	public String getPassword(String username) {
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT * FROM users WHERE Username = " + format(username));
+            String str="";
+            if(rs.next())
+			str= rs.getString(2);
+			return str;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	*/
+	
+	
+	//Checks if the username is in the database.
+	public boolean usernameExists(String username) {
+		return getUsers().contains(username);
+	}
+	
+	// Password Encryption Setting
+	private static final String SALT = "QuizItWebsite";
+	
+	private String hash(String s) {
+		s = SALT + s;
+		MessageDigest md = null;
+		try {
+			md = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		md.update(s.getBytes());
+		byte[] bytes = md.digest();
+		
+		StringBuffer buff = new StringBuffer();
+		for (int i=0; i<bytes.length; i++) {
+			int val = bytes[i];
+			val = val & 0xff;  // remove higher bits, sign
+			if (val<16) buff.append('0'); // leading 0
+			buff.append(Integer.toString(val, 16));
+		}
+		return buff.toString();
+	}
+	
+	//Checks if the password given for a username is correct.
+	public boolean checkPassword(String username, String password) {
+		ResultSet rs = null;
+		check();
+		String savedPassword = "";
+		try {
+			Statement stmt = con.createStatement();
+			check();
+            rs = stmt.executeQuery("SELECT * FROM users WHERE Username = " + format(username));
+            if(rs.next()) savedPassword= rs.getString(2);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		String hashResult = hash(password);
+		return hashResult.equals(savedPassword);
+	}
+	
+	//Adds a user to the database.
+	public void addUser(String username, String password) {
+		try {
+			PreparedStatement pstmt = con.prepareStatement(insertIntoUsers);
+			pstmt.setString(1, username);
+			pstmt.setString(2, hash(password));
+			pstmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+			pstmt.setBoolean(4, false);
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//Adds two entries to the friends relation in the database that covers the two-way friendship.
+	public void addFriendship(String userOne, String userTwo) {
+		try {
+			PreparedStatement pstmt = con.prepareStatement(insertIntoFriends);
+			pstmt.setString(1, userOne);
+			pstmt.setString(2, userTwo);
+			pstmt.executeUpdate();
+			pstmt = con.prepareStatement(insertIntoFriends);
+			pstmt.setString(1, userTwo);
+			pstmt.setString(2, userOne);
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void removeFriendship(String id1, String id2) {
+		try {
+			Statement stmt = con.createStatement();
+			User user1 = getUser(Integer.parseInt(id1));
+			User user2 = getUser(Integer.parseInt(id2));
+			stmt.executeUpdate("DELETE FROM friends WHERE UserOne='"+user1.username+"' AND UserTwo='"+user2.username+"'");
+			stmt.executeUpdate("DELETE FROM friends WHERE UserOne='"+user2.username+"' AND UserTwo='"+user1.username+"'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private String format(String str) {
+		return "\'" + str + "\'";
+	}
+	
+	public static void promoteUser(String username) {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("UPDATE users SET is_admin=1 WHERE Username = '" + username+"'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void downgradeUser(String username) {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("UPDATE users SET is_admin=0 WHERE Username = '" + username+"'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void removeUser(String username) {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeUpdate("DELETE FROM users WHERE Username = '" + username+"'");
+			stmt.executeUpdate("DELETE FROM friends WHERE UserOne='"+username+"'");
+			stmt.executeUpdate("DELETE FROM friends WHERE UserTwo='"+username+"'");
+			stmt.executeUpdate("DELETE FROM messages WHERE Sender_Username='"+username+"'");
+			stmt.executeUpdate("DELETE FROM messages WHERE Receiver_Username='"+username+"'");
+			stmt.executeUpdate("DELETE FROM reviews WHERE Username='"+username+"'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+}

@@ -1,0 +1,53 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+    <%@page import="backend.*, java.util.*" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+UserManager userManager = new UserManager();
+QuizManager quizManager=new QuizManager();
+String tag = request.getParameter("tag");
+ArrayList<Quiz> quizList = quizManager.getQuizzesByTag(tag); %>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" type="text/css" href="global.css">
+<title>Quiz List</title>
+</head>
+<body>
+<div class="realheader">
+		<a href="home.jsp" class="logo">Quiz It!</a>
+		<p class="logo-word">"Test, Learn, and Share on Quiz It!"</p>
+		<form method="post" action="LogoutServlet">
+			<input type="submit" class="small-button" id="logout-button" value="Logout">
+		</form>
+		<a id="admin-link" href="index.jsp">Home</a>
+</div>
+
+<div class="title-band"><p>Complete History</p></div> 
+<% if (quizList.size() == 0)  {%>
+No Quizzes With tag found.
+<%} else { %>
+<table cellpadding="3" cellspacing="3" border="0">
+    <tr>
+                <th>Quiz Name</th>
+                <th>Date Created</th>
+                <th>Rating</th>
+                <th>Average Score</th>
+        </tr>
+       	<% for (int i = 0; i < quizList.size(); i++) {
+            Quiz q = quizList.get(i);%>
+        <tr>
+                <td align="left"><a href="QuizInfo.jsp?id=<%=q.id%>"><%=q.getTitle() %></a></td>
+                <td align="center"><%=q.getCreationDate().toString() %></td>
+                <td align="center"><%=q.getRating() %></td>
+                <td align="center"><%=q.getAverageScore() %></td>
+        </tr>
+        <%
+        }
+        %>
+</table>   
+<%} %>
+
+</body>
+</html>

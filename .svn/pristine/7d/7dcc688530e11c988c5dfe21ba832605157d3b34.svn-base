@@ -1,0 +1,61 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@page import="backend.*, java.util.*" %>
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+QuizManager manager=new QuizManager();
+int attempt_id = Integer.parseInt(request.getParameter("attempt_id"));
+Attempt a= Attempt.getAttempt(attempt_id);
+int quiz_id=a.quizID;
+Quiz currentQuiz = manager.getQuiz(quiz_id);
+ArrayList<QuestionAttempt> qas = a.getQuestionAttempt(currentQuiz.random);
+
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Quiz Content</title>
+</head>
+<body>
+<form method="post" action="StoreAnswers">
+<%if(currentQuiz.multiPage==false) { %>
+<%for(QuestionAttempt qa:qas) { 
+	 request.setAttribute("QuizAttempt",a);
+	 request.setAttribute("QuestionAttempt",qa);
+	 int QuestionID  = qa.QuestionID;
+	 Question question = currentQuiz.getQuestion(QuestionID);
+	 request.setAttribute("question",question);
+	 request.setAttribute("questionType",question.questionType);%>
+	 <jsp:include page="${requestScope['questionType']}.jsp" />
+    
+    <%} %>   
+  <% } %>
+<%if(currentQuiz.multiPage==true) { 
+	QuestionAttempt qa=null;
+  for(QuestionAttempt q:qas) { 
+    if(q.graded ==false ){
+    	  qa=q;
+        break;
+      }
+    }
+     request.setAttribute("QuizAttempt",a);
+	 request.setAttribute("QuestionAttempt",qa);
+	 int QuestionID  = qa.QuestionID;
+	 Question question = currentQuiz.getQuestion(QuestionID);
+	 request.setAttribute("question",question);
+	 request.setAttribute("questionType",question.questionType);%>
+	 <jsp:include page="${requestScope['questionType']}.jsp" />
+	 <input type="hidden" name="question_attempt_id" value ="<%=qa.question_attempt_id %>">
+    
+<%} %>
+      <input type="hidden" name="attempt_id" value="<%=a.attempts_id %>">
+   <input type="submit" name="submit" value="Submit Answer">
+	<form method="post" action="compose.jsp">
+                        <input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+                        <input type="hidden" name="high_score" value="<%=currentQuiz.getHighScore(currentUser.getUsername())%>">                       
+                        <input type="submit" name="challenge" value="Send a Challenge">
+         </form>
+</form>
+</body>
+</html>

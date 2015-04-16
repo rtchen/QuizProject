@@ -1,0 +1,101 @@
+package backend;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+/**
+ * Servlet implementation class StoreAnswers
+ */
+@WebServlet("/StoreAnswers")
+public class StoreAnswers extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public StoreAnswers() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		int attempt_id = Integer.parseInt(request.getParameter("attempt_id"));	
+		Attempt a = Attempt.getAttempt(attempt_id);
+		int quiz_id = a.quizID;
+		QuizManager manager = new QuizManager();
+		Quiz q = manager.getQuiz(quiz_id);
+		HashMap<String,String[]> ans=(HashMap<String, String[]>) request.getParameterMap();
+		Boolean practice = Boolean.parseBoolean(request.getParameter("practice"));
+		if (practice) {
+			String qa_id = request.getParameter("question_attempt_id");
+			int question_attempt_id = Integer.parseInt(qa_id);
+			QuestionAttempt qa = QuestionAttempt.getQuestionAttempt(question_attempt_id);
+			String[] answer = ans.get(qa_id);	
+			qa.gradeAnswer(answer);
+			response.sendRedirect("imResult.jsp?question_attempt_id="+question_attempt_id + "&practice=true");
+		} else {
+			if (q.multiPage==false) {	
+				ArrayList<QuestionAttempt> qas = a.getQuestionAttempt(q.random);	
+				for (QuestionAttempt qa:qas) {		
+					String[] answer = ans.get(Integer.toString(qa.question_attempt_id));		
+					qa.gradeAnswer(answer);
+				}
+				int score = 0;
+				for (QuestionAttempt qa:qas) {
+					score += qa.point;
+				}
+				a.updateScore(score);
+				response.sendRedirect("result.jsp?attempt_id="+attempt_id);
+			} else {
+				String qa_id = request.getParameter("question_attempt_id");
+				int question_attempt_id = Integer.parseInt(qa_id);
+				
+				QuestionAttempt qa = QuestionAttempt.getQuestionAttempt(question_attempt_id);
+				String[] answer = ans.get(qa_id);	
+				qa.gradeAnswer(answer);
+				Boolean all_graded = true;
+				ArrayList<QuestionAttempt> qas = a.getQuestionAttempt(q.random);	
+				for(QuestionAttempt thisqa:qas){
+					if(thisqa.graded==false){
+						all_graded=false;
+						break;
+					}
+				}
+				if (all_graded) {
+					int score = 0;
+					for(QuestionAttempt thisqa:qas){
+						score+=thisqa.point;
+					}
+					a.updateScore(score);
+					response.sendRedirect("result.jsp?attempt_id="+attempt_id);	
+				} else if(q.feedback==true){
+					response.sendRedirect("imResult.jsp?question_attempt_id="+question_attempt_id + "&practice=false");
+				} else {
+					response.sendRedirect("attempt.jsp?attempt_id="+attempt_id);
+				}
+			}
+		}
+
+		
+			
+	}
+
+}

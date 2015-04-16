@@ -1,0 +1,42 @@
+package backend;
+
+import java.util.ArrayList;
+
+import org.junit.Test;
+
+public class UserManagerTest {
+
+	@Test
+	public void userTest() {
+		UserManager manager = new UserManager();
+		User user = manager.getUser("Ruitang");
+		
+		QuizManager qman = new QuizManager();
+		Quiz quiz = qman.getQuiz(1);
+		System.out.println("score");
+		System.out.println(quiz.getHighScore("Jordan"));
+		
+		System.out.println("search test");
+		ArrayList<String> search = manager.findUsers("eve");
+		for (String s : search) {
+			System.out.println(s);
+		}
+		System.out.println();
+		
+		ArrayList<Message> messages = user.getReceivedMessages();
+		for (Message m : messages) {
+			System.out.println("Message: " + m.getMessage());
+		}
+		ArrayList<String> users = manager.getUsers();
+		for (String f : users) {
+			System.out.println(f);
+		}
+		ArrayList<Achievement> achievements = user.getAchievements();
+		for (Achievement a : achievements) {
+			System.out.println("Achievement: " + a.getAchievement());
+		}
+		System.out.println("NumQuizzesTaken: " + user.numberOfQuizzesTaken());
+		System.out.println("NumQuizzesCreated: " + user.numberOfQuizzesCreated());
+	}
+	
+}

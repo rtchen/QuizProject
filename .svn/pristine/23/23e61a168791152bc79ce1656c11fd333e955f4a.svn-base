@@ -1,0 +1,237 @@
+package backend;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Map;
+
+public class User {
+    public int user_id;
+    public boolean is_admin;
+	private final String insertIntoMessages = "INSERT INTO messages" 
+		+ "(Sender_Username, Receiver_Username, Message_Type, Message, Received, QuizID) VALUES"
+		+ "(?,?,?,?,?,?)";
+	private final String insertIntoAchievements = "INSERT INTO achievements" 
+		+ "(Achievement_Type, Username) VALUES"
+		+ "(?,?)";
+	
+	public String username;
+	private Timestamp joinDate;
+	private Connection con = MyDBInfo.getConnection();
+	/*
+	 private void check() {
+			while (con == null) con = (Connection) new MyDBInfo().getConnection();
+			
+		}
+	*/
+	
+	/* Creates an instance of a user.  Currently, the information stored in User is only the username and
+	 * the date they joined.  The password isn't stored because we only need to check it when the user logs
+	 * in.  Also, all the other information pertinent to the user (messages, quizzes, achievements) is 
+	 * stored in the database and queried by one of the methods in this class' API. 
+	 * */
+	public User(String username, Timestamp joinDate,int user_id,boolean is_admin) {
+		this.username = username;
+		this.joinDate = joinDate;
+		this.user_id = user_id;
+		this.is_admin = is_admin;
+		//con = new MyDBInfo().getConnection();
+	}
+	
+	//Creates an instance of a user from a row of a ResultSet from a database query.
+	public User(ResultSet rs) {
+		try {
+			this.username = rs.getString(1);
+			this.joinDate = rs.getTimestamp(3);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		//con = new MyDBInfo().getConnection();
+	}
+	
+	// Returns a list of the usernames of this user's friends.
+	public ArrayList<String> getFriends() {
+		ArrayList<String> friendList = new ArrayList<String>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT UserTwo FROM friends WHERE UserOne=" + format(username));
+			while (rs.next()) {
+				friendList.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return friendList;
+	}
+	
+	//Returns a list of messages this user has received.
+	public ArrayList<Message> getReceivedMessages() {
+		ArrayList<Message> messageList = new ArrayList<Message>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM messages WHERE Receiver_Username=" + format(username));
+			while (rs.next()) {
+				messageList.add(new Message(rs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return messageList;
+	}
+	
+	//Returns a list of messages this user has sent.
+	public ArrayList<Message> getSentMessages() {
+		ArrayList<Message> messageList = new ArrayList<Message>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM messages WHERE Sender_Username=" + format(username));
+			while (rs.next()) {
+				messageList.add(new Message(rs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return messageList;
+	}
+	
+	//Sends a message by adding an entry into the Messages relation in the database.
+	public void sendMessage(String receiver, String messageType, String message, int quizID) {
+		//check();
+		try {
+			PreparedStatement pstmt = con.prepareStatement(insertIntoMessages);
+			pstmt.setString(1, username);
+			pstmt.setString(2, receiver);
+			pstmt.setString(3, messageType);
+			pstmt.setString(4, message);
+			pstmt.setBoolean(5, false);
+			pstmt.setInt(6, quizID);
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//Returns a list of quiz attempts this user has done.
+	public ArrayList<Attempt> getAttempts(int quizID) {
+		ArrayList<Attempt> attemptList = new ArrayList<Attempt>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("Select * From attempts Where QuizID=" + quizID + " AND Username=" + format(username));
+			while (rs.next()) {
+				attemptList.add(new Attempt(rs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return attemptList;
+	}
+	
+	
+	public void giveAchievements() {
+		ArrayList<Achievement> currentAchievements = getAchievements();
+		int taken = numberOfQuizzesTaken();
+		int created = numberOfQuizzesCreated();
+		Map<String, Integer> creationAchievements = Achievement.getCreationAchievements();
+		Map<String, Integer> takenAchievements = Achievement.getTakenAchievements();
+		for (String achievement : creationAchievements.keySet()) {
+			if (created >= creationAchievements.get(achievement) && !currentAchievements.contains(achievement)) {
+				addAchievement(achievement);
+			}
+		}
+		for (String achievement : takenAchievements.keySet()) {
+			if (taken >= takenAchievements.get(achievement) && !currentAchievements.contains(achievement)) {
+				addAchievement(achievement);
+			}
+		}
+	}
+	
+	//Returns a list of achievements this user has.
+	public ArrayList<Achievement> getAchievements() {
+		ArrayList<Achievement> achievementList = new ArrayList<Achievement>();
+		ResultSet rs = null;
+		//check();
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT Achievement_Type FROM achievements WHERE Username=" + format(username));
+			while(rs.next()) {
+				achievementList.add(new Achievement(rs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return achievementList;	
+	}
+	
+	//Gives the user an achievement.
+	public void addAchievement(String type) {
+		//check();
+		try {
+			PreparedStatement pstmt = con.prepareStatement(insertIntoAchievements);
+			pstmt.setString(1, type);
+			pstmt.setString(2, username);
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//Counts the number of quizzes the user has taken - used to check if the user has obtained an achievement.
+	public int numberOfQuizzesTaken() {
+		int numQuizzesTaken = 0;
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT COUNT(*) FROM attempts WHERE Username=" + format(username));
+			rs.next();
+			numQuizzesTaken = rs.getInt(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return numQuizzesTaken;
+	}
+	
+	//Counts the number of quizzes the user has created - used for achievement purposes.
+	public int numberOfQuizzesCreated() {
+		int numQuizzesCreated = 0;
+		ResultSet rs = null;
+		try {
+			Statement stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT COUNT(*) FROM quizzes WHERE Username=" + format(username));
+			rs.next();
+			numQuizzesCreated = rs.getInt(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return numQuizzesCreated;
+	}
+	
+	
+	
+	private String format(String str) {
+		return "\'" + str + "\'";
+	}
+	public void deleteFriends(String friend){
+		try {
+            con.prepareStatement("DELETE FROM `friends` WHERE `UserTwo` =" + format(friend)).executeUpdate();
+            con.prepareStatement("DELETE FROM `friends` WHERE `UserOne` =" + format(friend)).executeUpdate();
+    } catch (SQLException e) {
+            e.printStackTrace();
+    }
+	}
+	public String getUsername() {return username;}
+	public Timestamp getJoinDate() {return joinDate;}
+}
+

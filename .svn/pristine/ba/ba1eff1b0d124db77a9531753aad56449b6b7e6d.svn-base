@@ -1,0 +1,91 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@page import="backend.*, java.util.*" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat();
+UserManager manager = new UserManager();
+QuizManager quizM = new QuizManager();
+if (currentUser == null) {%>
+	<jsp:forward page="login.jsp"/>
+<% } else if (!currentUser.is_admin) { %>
+	<jsp:forward page="login.jsp?bad=3"/>
+<% }%>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" type="text/css" href="global.css">
+<title>Admin</title>
+</head>
+<body>
+	<span>
+		<a href="home.jsp" class="logo">Quiz It!</a>
+		<p class="logo-word">"Test, Learn, and Share on Quiz It!"</p>
+	</span>
+<div class="realbody">	
+	<div class="welcome">
+		<h3>Welcome Administrator <%=currentUser.username %>!</h3>
+		<form method="post" action="LogoutServlet">
+			<input type="submit" class="small-button" id="logout-button" value="Logout">
+		</form>
+		<a id="admin-link" href="index.jsp">Back</a>
+	</div>
+
+	<div class="title-band"><p>Announcements</p></div>
+	<%ArrayList<Announcement> announcements = Announcement.getAnnouncements(); %>
+        <% for(Announcement a : announcements) { %>
+        
+                <div class="announcement">
+                	<h3><%=a.subject %></h3>
+                	<em>
+                		<%User user = manager.getUser(a.username); %>
+                	    Posted by <a href="user/profile.jsp?user=<%=user.user_id%>"><%=a.username %></a> on <%=sdf.format(a.postDate) %>
+                	 	<a class="delete-link" href="DeleteAnnouncementServlet?announcement_id=<%=a.announcement_id %>">Delete</a>
+                    </em>
+          		    <p><%=a.body %></p>
+          		 </div>
+        
+        <% } %>
+    <div id="announce-form">
+     	<form method="post" action="AnnounceServlet">
+     		Subject:<input id="announce-subject" type="text" name="subject"> 
+     		<input type="submit" class="small-button" value="Post New Announcement"><br>
+     		<textarea rows="4" cols="60" name="body">Enter text here...</textarea>
+			
+		</form>
+    </div>
+    
+    <div class="title-band"><p>Admin Accounts</p></div>
+    	<div class="promote-form">
+    		<form method="post" action="PromoteServlet">
+     			<select name="userToChange">
+     				<% ArrayList<String> users = manager.getUsers();
+     				if (users!=null) {
+     				for (String username: users) {
+     					User user = manager.getUser(username); 
+     					if (!user.is_admin) {%>
+     					<option value=<%=username%>><%=username %></option>
+     					<% }%>
+     				<% }%>
+				</select>
+     			<input type="submit" class="small-button" value="Promote to Admin"><br>
+			</form>
+			
+			<form method="post" action="DowngradeServlet">
+				<select name="userToChange">
+     				<% for (String username: users) {
+     					User user = manager.getUser(username); 
+     					if (user.is_admin) {%>
+     					<option value=<%=username%>><%=username %></option>
+     					<% }%>
+     				<% }}%>
+				</select>
+     			<input type="submit" class="small-button" value="Downgrade from Admin"><br>
+			</form>
+		</div>
+</div>
+</body>
+</html>

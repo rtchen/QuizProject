@@ -1,0 +1,172 @@
+package backend;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.HashMap;
+
+import com.mysql.jdbc.PreparedStatement;
+
+public class EditQuestionMethod {
+	 protected Connection con;
+	 public EditQuestionMethod (){
+		 con = new MyDBInfo().getConnection();
+	 }
+	 private void check() {
+			while (con == null) con = (Connection) new MyDBInfo().getConnection();
+			
+		}
+	 public  int addQuizInfo(String username,String title, String description,Boolean multi,
+			 Boolean random, Boolean immediate ,Boolean practice){
+		 int quiz_id=-1;
+		check();
+		 try {
+			 PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO quizzes (Username, Title, Description, Creation_Date, Random, Multi_Page, Feedback, Practice, is_public) VALUES (?,?,?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS);
+				ps.setString(1,username);
+				ps.setString(2,title);
+				ps.setString(3,description);
+				ps.setTimestamp(4,new Timestamp(System.currentTimeMillis()));
+				ps.setBoolean(5, random);
+				ps.setBoolean(6,multi);
+				ps.setBoolean(7,immediate);
+				ps.setBoolean(8,practice);
+				ps.setBoolean(9,true);
+				check();
+				ps.executeUpdate();		
+				 ResultSet rs = ps.getGeneratedKeys();
+				 if(rs.next())
+	             quiz_id = rs.getInt(1);
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		 
+		 return quiz_id;
+	 }
+	 
+	 public  void addVerbal(HashMap<String,String[]> map,String questionType){
+		 int quiz_id = Integer.parseInt(map.get("quiz_id")[0]);
+		 String question = map.get("question_text")[0];
+		 String[] answers = map.get("correct_answers");
+		 int questionID=-1;
+		 if(question.equals("")) return;
+		 Boolean flag = true;
+		 while(flag){
+		 try {
+			 check();
+		     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO questions (QuizID,Question_Type,Question) VALUES (?,?,?)",Statement.RETURN_GENERATED_KEYS);
+		     ps.setInt(1,quiz_id);
+		     ps.setString(2,questionType);
+		     ps.setString(3,question);
+		     if(con==null) continue;
+		     else flag=false;
+		     ps.executeUpdate();
+		     ResultSet rs = ps.getGeneratedKeys();
+		     if(rs.next()){
+             questionID= rs.getInt(1);
+		     }
+		 }
+		 catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 }
+		 for(int i=0;i<answers.length;i++){
+			 if(answers[i].equals("")) continue;
+			 flag = true;
+			 while(flag){
+			 try {
+				 check();
+			     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO answers (QuestionID,Answer) VALUES (?,?)");
+			     ps.setInt(1,questionID);
+			     ps.setString(2,answers[i]);
+			     if(con!=null) flag=false;
+			     else continue;
+			     ps.executeUpdate();
+			 }
+			 catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			 }
+		 }
+			 
+		 }
+		 public void addMultiChoice(HashMap<String,String[]> map){
+			 int quiz_id = Integer.parseInt(map.get("quiz_id")[0]);
+			 String question = map.get("question_text")[0];
+			 String answer = map.get("correct_answers")[0];
+			 if(answer.equals("")) return ;
+			 int questionID=-1;
+			 Boolean flag=true;
+			 while(flag){
+			 try {
+				 check();
+			     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO questions (QuizID,Question_Type,Question) VALUES (?,?,?)",Statement.RETURN_GENERATED_KEYS);
+			     ps.setInt(1,quiz_id);
+			     ps.setString(2,"MultiChoice");
+			     ps.setString(3,question);
+			     if(con ==null) continue;
+			     else flag=false;
+			     ps.executeUpdate();
+			     ResultSet rs = ps.getGeneratedKeys();
+			     if(rs.next())
+	             questionID= rs.getInt(1);
+			 }
+			 catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			 }
+             check();
+				 try {
+				     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO answers (QuestionID,Answer) VALUES (?,?)");
+				     ps.setInt(1,questionID);
+				     ps.setString(2,answer);
+				     ps.executeUpdate();
+				 }
+				 catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				 check();
+				 try {
+				     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO choices (QuestionID,Choice) VALUES (?,?)");
+				     ps.setInt(1,questionID);
+				     ps.setString(2,answer);
+				     check();
+				     ps.executeUpdate();
+				 }
+				 catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				 String[] incorrect = map.get("incorrect_answers");
+				 for(int i=0;i<incorrect.length;i++){
+					 if(incorrect[i].equals("")) continue;
+					 check();
+					 try {
+					     PreparedStatement ps = (PreparedStatement) con.prepareStatement("INSERT INTO choices (QuestionID,Choice) VALUES (?,?)");
+					     ps.setInt(1,questionID);
+					     ps.setString(2,incorrect[i]);
+					     check();
+					     ps.executeUpdate();
+					 }
+					 catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+				 }
+				 
+				 
+			 
+	 }
+	 
+	 
+	 
+	 
+	 
+}

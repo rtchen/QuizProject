@@ -1,0 +1,49 @@
+package backend;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
+
+public class Achievement {
+	private String achievement;
+	
+	private static final Map<String, Integer> creationAchievements;
+	private static final Map<String, Integer> takenAchievements;
+	
+	static {
+		creationAchievements = new HashMap<String, Integer>();
+		creationAchievements.put("New Student", 1);
+		creationAchievements.put("Novice Student", 5);
+		creationAchievements.put("Amateur Student", 10);
+		creationAchievements.put("Skilled Student", 25);
+		creationAchievements.put("Master Student", 50);
+	}
+	
+	static {
+		takenAchievements = new HashMap<String, Integer>();
+		takenAchievements.put("New Teacher", 1);
+		takenAchievements.put("Novice Teacher", 5);
+		takenAchievements.put("Amateur Teacher", 10);
+		takenAchievements.put("Skilled Teacher", 25);
+		takenAchievements.put("Master Teacher", 50);
+	}	
+	
+	public Achievement(ResultSet rs) {
+		try {
+			this.achievement = rs.getString(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public Achievement(String achievement) {
+		this.achievement = achievement;
+	}
+	
+	public static Map<String, Integer> getCreationAchievements() {return creationAchievements;}
+	public static Map<String, Integer> getTakenAchievements() {return takenAchievements;}
+	
+	public String getAchievement() {return achievement;}
+	
+}

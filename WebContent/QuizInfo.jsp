@@ -1,0 +1,239 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+ <%@page import="backend.*, java.util.*, java.text.*" %>
+<%
+User currentUser = (User) session.getAttribute("currentUser");
+QuizManager manager=new QuizManager();
+manager.deletePracticeAttempts();
+DecimalFormat df = new DecimalFormat("#.0");
+Quiz currentQuiz = manager.getQuiz(Integer.parseInt(request.getParameter("id")));
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" type="text/css" href="global.css">
+<title>Quiz Info</title>
+</head>
+<body>
+
+<div class="realheader">
+		<a href="home.jsp" class="logo">Quiz It!</a>
+		<p class="logo-word">"Test, Learn, and Share on Quiz It!"</p>
+		<form method="post" action="LogoutServlet">
+			<input type="submit" class="small-button" id="logout-button" value="Logout">
+		</form>
+		<a id="admin-link" href="index.jsp">Home</a>
+</div>
+	
+<div class="realbody">
+ 		<div class="title-band"><p>Quiz Information</p></div>
+ 		<div>
+          <form method="post" action="StartQuiz">   
+                        <input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+                        <input type="hidden" name="practice" value=false>
+
+                        <input id="button1" type="submit" name="score_mode" class="button" value="Take for Score">
+                        
+         </form>
+         <% if (currentQuiz.practice) { %>
+         <form method="post" action="StartQuiz">   
+                        <input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+                        <input type="hidden" name="practice" value=true>
+                        <input id="button2" type="submit" name="score_mode" class="button" value="Practice">
+                        
+         </form>
+         <% } else {%>
+         	<div id="fake-button"></div>
+         <% }  %>
+          <form method="post" action="compose.jsp">
+                        <input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+                        <input type="hidden" name="high_score" value="<%=currentQuiz.getHighScore(currentUser.username)%>">                       
+                        <input id="button3" type="submit" name="challenge" class="button" value="Send Challenge">
+         </form>
+         <button id="button4" class="button" onClick="window.location.href='rate.jsp?quiz_id=<%=currentQuiz.id%>'">Write Review</button>
+          
+		</div>
+        <table cellpadding="3" cellspacing="3" border="0" class="quiz-information-table">
+                <tr>
+                        <th>Name </th>
+                        <td><%=currentQuiz.title %></td>
+                </tr>
+                <tr>
+                        <th>Description</th>
+                        <td><%=currentQuiz.description %></td>
+                </tr>
+                <tr>
+                        <th>Created by</th>
+                        <%UserManager usermanager= new UserManager(); %>
+                        <%User creator = usermanager.getUser(currentQuiz.creator);%>
+                        <td><em><a href="profile.jsp?user=<%=creator.user_id%>"><%=currentQuiz.creator %></a></em></td>
+                </tr>
+                <tr>
+                        <th>Created on</th>
+                        <td><%=currentQuiz.creationDate.toString()%></td>
+                        
+                </tr>
+                <tr>
+                        <th>Multiple Pages</th>
+                        <td><%=currentQuiz.multiPage ? "The quiz will be rendered on multiple pages." : "The quiz will be rendered on a single page." %></td>
+                </tr>
+                <tr>
+                        <th>Random Questions</th>
+                        <td><%=currentQuiz.random ? "The questions will be ordered randomly." : "The questions will be ordered in the order you specify." %></td>
+                </tr>
+                <tr>
+                        <th>Practice Mode</th>
+                        <td><%=currentQuiz.practice ? "The quiz can be taken for practice." : "The quiz must be taken for a grade." %></td>
+                </tr>
+                <tr>
+                        <th>Average Score</th>
+                        <td><%=df.format(currentQuiz.getAverageScore())%></td>
+                </tr>
+                <tr>
+                		<th>Tags</th>
+                		<td><%=currentQuiz.getTags() %></td>
+                </tr>
+                <tr>
+                		<th><button class="small-button" onClick="window.location.href='addtag.jsp?quiz_id=<%=currentQuiz.id%>'">Add Tags</button></th>
+                </tr>
+       	</table>
+       	
+    	<div class="title-band-shifted"><p>Recent History <a style="color: #FFD800" href="quizHistory.jsp?quiz=<%=currentQuiz.id %>">(Full History)</a></p> </div>
+    	
+       	<table cellpadding="3" cellspacing="3" border="0" class="quiz-information-table">
+                <tr>
+                		<th>Recent History</th>
+                		<% ArrayList<Attempt> recentAttempts = manager.getRecentAttempt(currentQuiz.id);
+                		int num = 0;
+                		boolean buttonChecked = false;
+                		if (recentAttempts.isEmpty()) {%>
+                			<td>(No history found)</td></tr>
+                		<% } else {
+                			for(Attempt apt : recentAttempts) {
+                				num++;
+                				User taker = usermanager.getUser(apt.username);
+                				if (num == 1) { %>
+                					<td><%=apt.finished?"Finished by ":"Attempted by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                					<%=apt.finished?" with score "+apt.points+" ":" " %>at <%=apt.end.toString() %></td>
+                </tr>
+                				<% } else { %>
+                <tr>
+                		<th>
+                		 <% if (currentUser.is_admin && num == 2) { %>
+                		
+	 	 					 <form method="post" action="ClearHistoryServlet">
+	 	 					 		<input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+									<input type="submit" class="small-button" value="Clear History">
+							  </form>
+						 <% } 
+						 buttonChecked = true;%>      	
+                		</th>
+                		<td><%=apt.finished?"Finished by ":"Attempted by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                		<%=apt.finished?" with score "+apt.points+" ":" " %>at <%=apt.end.toString() %></td>
+                </tr>
+                			<% }
+                		}
+                if (!buttonChecked) {
+                	if (currentUser.is_admin) { %>
+                	 <tr>
+                	<th>
+ 					 <form method="post" action="ClearHistoryServlet">
+ 					        <input type="hidden" name="quiz_id" value="<%=currentQuiz.id %>">
+							<input type="submit" class="small-button" value="Clear History">
+					  </form>
+					  </th>
+					 </tr>
+				 <% } 
+                } }
+            	%>
+        </table>
+        
+        <div class="title-band-shifted"><p>Top Scores</p></div>
+       	<table cellpadding="3" cellspacing="3" border="0" class="quiz-information-table">
+                <tr>
+                	<th>Top Scores</th>
+                	<% ArrayList<Attempt> topAttempts = currentQuiz.getTopAttempts();
+                	int number = 0;
+                	if (topAttempts.isEmpty()) {%>
+                		<td>(No scores)</td></tr>
+                	<% } else {
+                		for(Attempt apt : topAttempts) {
+                			number++;
+                			User taker = usermanager.getUser(apt.username);
+                			if (number == 1) { %>
+                				<td><%="Finished by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                				<%=" with score "+apt.points+" in "%> <%=apt.getElapsedTime()%> seconds</td>
+                </tr>
+                <tr>
+                		  <%} else { %>
+                		  <th>
+								
+                		  </th>
+                
+                		<td><%="Finished by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                		<%=" with score "+apt.points+" in "%> <%=apt.getElapsedTime() %> seconds</td>
+                </tr>
+                			<% }
+                		}}%>
+
+
+        </table>
+        
+        <div class="title-band-shifted"><p>Top Scores From Today</p></div>
+       	<table cellpadding="3" cellspacing="3" border="0" class="quiz-information-table">
+                <tr>
+                	<th>Top Scores</th>
+                	<% ArrayList<Attempt> topAttemptsToday = currentQuiz.getTopAttemptsFromToday();
+                	number = 0;
+                	if (topAttemptsToday.isEmpty()) {%>
+                		<td>(No scores from today)</td></tr>
+                	<% } else {
+                		for(Attempt apt : topAttemptsToday) {
+                			number++;
+                			User taker = usermanager.getUser(apt.username);
+                			if (number == 1) { %>
+                				<td><%="Finished by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                				<%=" with score "+apt.points+" in "%> <%=apt.getElapsedTime()%> seconds</td>
+                </tr>
+                <tr>
+                		  <%} else { %>
+                		  <th>
+								
+                		  </th>
+                
+                		<td><%="Finished by "%><em><a href="profile.jsp?user=<%=taker.user_id%>"><%=taker.username %></a></em>
+                		<%=" with score "+apt.points+" in "%> <%=apt.getElapsedTime() %> seconds</td>
+                </tr>
+                			<% }
+                		}}%>
+
+
+        </table>
+	
+	
+	
+	<div class="title-band-shifted"><p>Reviews</p></div>
+	<table cellpadding="3" border="0" class="quiz-information-table">
+	<% ArrayList<Review> reviews = currentQuiz.getReviews();%>
+	<tr><th>Average Rating:</th><td><%= df.format(currentQuiz.getRating()) %> / 5.0</td></tr>
+	</table>
+	<table cellpadding="3" border="0" class="quiz-information-table">
+	<% int count = 0;
+	   for (Review r : reviews) { 
+	       User reviewer = usermanager.getUser(r.getReviewer());
+	   	   count++;%>
+	   		<tr><th><%=count==1?"User Reviews":""%></th>
+		<% for(int i = 0; i < r.getStars(); i++){%>
+				<td><img src="star.png"/></td>
+		<% }
+		   for (int i= 0; i < 5-r.getStars();i++) {%>
+				<td><img src="dimstar.png"/></td>
+		<% }%>
+			<td class="review-td">"<%=r.getReview() %>" <em>by <a href="profile.jsp?user=<%=reviewer.user_id%>"><%=reviewer.username %></a></em></td></tr>
+	<% } %>
+	</table>
+	
+</div>
+</body>
+</html>

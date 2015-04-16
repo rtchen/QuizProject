@@ -1,0 +1,83 @@
+package backend;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * Servlet implementation class MessageServlet
+ */
+@WebServlet("/MessageServlet")
+public class MessageServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public MessageServlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub		  
+		if(request.getParameter("compose_message")!=null){
+			User currentUser = (User)request.getSession().getAttribute("currentUser");
+			String receiver = request.getParameter("receiver");
+			Date date = new java.util.Date();
+			Timestamp currTime = new Timestamp(date.getTime());
+			String subject = request. getParameter("subject");
+			String message = request.getParameter("message");
+			int ID = MessageManager.numAllMsgs();
+			Message msg = new Message(currentUser.getUsername(),receiver,message,true,-1,currTime,subject,ID,"GENERAL");
+			MessageManager.sendMessage(msg);
+            response.sendRedirect("messages.jsp");
+		}
+		else if (request.getParameter("inbox_update") != null) {
+            String update = request.getParameter("update_type");
+            String[] verifiedIDs = request.getParameterValues("verify");
+            if (verifiedIDs != null) {
+                    if (update.equals("delete")) {
+                            for (String ID: verifiedIDs) {
+                                    int msg_ID = Integer.parseInt(ID);
+                                    MessageManager.deleteMessage(msg_ID);
+                            }
+                    } 
+                    else if (update.equals("unread")) {
+                    	for (String ID: verifiedIDs) {
+                            int msg_ID = Integer.parseInt(ID);
+                            MessageManager.markUnread(msg_ID);
+                    	}
+                    }
+                    else{
+                    	for (String ID: verifiedIDs) {
+                            int msg_ID = Integer.parseInt(ID);
+                            MessageManager.markRead(msg_ID);
+                    	}
+                    }
+                    
+            }
+            response.sendRedirect("messages.jsp");
+		}
+		else {
+            response.sendRedirect("messages.jsp");
+		}
+		
+	}
+}
